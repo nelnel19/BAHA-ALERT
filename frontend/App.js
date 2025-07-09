@@ -14,6 +14,8 @@ import AlertScreen from "./screens/AlertScreen";
 import GameScreen from "./screens/GameScreen"; 
 import UpdateProfileScreen from "./screens/UpdateProfileScreen"; 
 import FloodScreen from "./screens/FloodScreen";
+import HistoryScreen from "./screens/HistoryScreen";
+import ReportScreen from "./screens/ReportScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -84,6 +86,16 @@ export default function App() {
           <Stack.Screen
           name="Profile"
           component={UpdateProfileScreen}
+          options={{ headerShown: false }} 
+        />
+         <Stack.Screen
+          name="History"
+          component={HistoryScreen}
+          options={{ headerShown: false }} 
+        />
+        <Stack.Screen
+          name="Reports"
+          component={ReportScreen}
           options={{ headerShown: false }} 
         />
       </Stack.Navigator>

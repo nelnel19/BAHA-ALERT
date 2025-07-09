@@ -7,7 +7,7 @@ const jwt = require("jsonwebtoken");
 // Register
 router.post("/register", async (req, res) => {
   try {
-    const { name, email, password, age } = req.body;
+    const { name, fullname, email, password, age } = req.body;
 
     const existingUser = await User.findOne({ email });
     if (existingUser) return res.status(400).json({ msg: "User already exists" });
@@ -16,6 +16,7 @@ router.post("/register", async (req, res) => {
 
     const newUser = new User({
       name,
+      fullname,
       email,
       password: hashedPassword,
       age,
@@ -47,9 +48,11 @@ router.post("/login", async (req, res) => {
       user: {
         id: user._id,
         name: user.name,
+        fullname: user.fullname,
         email: user.email,
         age: user.age,
         profileImage: user.profileImage,
+        role: user.role,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt,
       },
@@ -63,8 +66,8 @@ router.post("/login", async (req, res) => {
 // Edit profile (with optional password update)
 router.put("/edit/:id", upload.single("profileImage"), async (req, res) => {
   try {
-    const { name, age, password } = req.body;
-    const updateFields = { name, age };
+    const { name, fullname, age, password } = req.body;
+    const updateFields = { name, fullname, age };
 
     // If a new profile image is uploaded
     if (req.file && req.file.path) {
@@ -88,9 +91,11 @@ router.put("/edit/:id", upload.single("profileImage"), async (req, res) => {
       user: {
         id: updatedUser._id,
         name: updatedUser.name,
+        fullname: updatedUser.fullname,
         email: updatedUser.email,
         age: updatedUser.age,
         profileImage: updatedUser.profileImage,
+        role: updatedUser.role,
         createdAt: updatedUser.createdAt,
         updatedAt: updatedUser.updatedAt,
       },
@@ -100,7 +105,6 @@ router.put("/edit/:id", upload.single("profileImage"), async (req, res) => {
     res.status(500).json({ msg: "Internal server error" });
   }
 });
-
 
 // Delete account
 router.delete("/delete/:id", async (req, res) => {

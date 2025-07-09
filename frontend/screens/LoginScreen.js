@@ -280,7 +280,7 @@ export default function LoginScreen({ navigation }) {
                   <Animated.View style={[styles.logoGlow, { opacity: logoGlowOpacity }]} />
                   <Image source={require("../assets/flood.png")} style={styles.logo} resizeMode="contain" />
                 </Animated.View>
-                <Text style={styles.logoText}>Welcome Back</Text>
+                <Text style={styles.logoText}>Welcome</Text>
                 <Text style={styles.logoSubtext}>Sign in to your account</Text>
               </View>
 

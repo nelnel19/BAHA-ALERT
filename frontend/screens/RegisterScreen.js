@@ -25,6 +25,7 @@ const { width, height } = Dimensions.get("window")
 export default function RegisterScreen({ navigation }) {
   const [formData, setFormData] = useState({
     name: "",
+    fullname: "",
     age: "",
     email: "",
     password: "",
@@ -152,7 +153,7 @@ export default function RegisterScreen({ navigation }) {
 
   const register = async () => {
     // Validation
-    if (!formData.name || !formData.age || !formData.email || !formData.password) {
+    if (!formData.name || !formData.fullname || !formData.age || !formData.email || !formData.password) {
       return Alert.alert("Error", "Please fill in all fields.")
     }
 
@@ -181,6 +182,7 @@ export default function RegisterScreen({ navigation }) {
     try {
       await axios.post(`${API_BASE_URL}/auth/register`, {
         name: formData.name,
+        fullname: formData.fullname,
         email: formData.email.toLowerCase().trim(),
         password: formData.password,
         age: ageNumber,
@@ -313,14 +315,28 @@ export default function RegisterScreen({ navigation }) {
               {/* Form Section */}
               <View style={styles.formSection}>
                 <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Display Name</Text>
+                  <View style={styles.inputWrapper}>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="What should we call you?"
+                      placeholderTextColor="#9CA3AF"
+                      value={formData.name}
+                      onChangeText={(value) => handleInputChange("name", value)}
+                      autoCapitalize="words"
+                    />
+                  </View>
+                </View>
+
+                <View style={styles.inputGroup}>
                   <Text style={styles.inputLabel}>Full Name</Text>
                   <View style={styles.inputWrapper}>
                     <TextInput
                       style={styles.input}
-                      placeholder="Enter your full name"
+                      placeholder="Enter your full legal name"
                       placeholderTextColor="#9CA3AF"
-                      value={formData.name}
-                      onChangeText={(value) => handleInputChange("name", value)}
+                      value={formData.fullname}
+                      onChangeText={(value) => handleInputChange("fullname", value)}
                       autoCapitalize="words"
                     />
                   </View>

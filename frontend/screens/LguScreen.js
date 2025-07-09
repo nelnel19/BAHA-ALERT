@@ -12,10 +12,13 @@ import {
   StatusBar,
   ScrollView,
   Linking,
+  Dimensions,
 } from 'react-native';
 import { API_BASE_URL } from '../config';
 import moment from 'moment';
 import axios from 'axios';
+
+const { width: screenWidth } = Dimensions.get('window');
 
 const LguScreen = ({ navigation }) => {
   const [schedules, setSchedules] = useState([]);
@@ -46,7 +49,7 @@ const LguScreen = ({ navigation }) => {
       setWeatherNews(response.data.articles);
     } catch (error) {
       console.error("Error fetching weather news:", error.message);
-      setError("Failed to load Philippine weather news. Please try again later.");
+      setError("Failed to load weather updates. Please try again.");
     } finally {
       setWeatherLoading(false);
     }
@@ -67,29 +70,40 @@ const LguScreen = ({ navigation }) => {
     <TouchableOpacity
       style={styles.featuredCard}
       onPress={() => navigation.navigate('ScheduleDetail', { schedule: item })}
-      activeOpacity={0.9}
+      activeOpacity={0.8}
     >
       <View style={styles.featuredImageContainer}>
         {item.imageUrl ? (
           <Image source={{ uri: item.imageUrl }} style={styles.featuredImage} />
         ) : (
           <View style={styles.placeholderImage}>
-            <Text style={styles.placeholderText}>📰</Text>
+            <Text style={styles.placeholderText}>🌊</Text>
           </View>
         )}
+        <View style={styles.featuredGradient} />
         <View style={styles.featuredOverlay}>
           <View style={styles.categoryBadge}>
-            <Text style={styles.categoryText}>{item.category || 'News'}</Text>
+            <Text style={styles.categoryText}>{item.category || 'Alert'}</Text>
+          </View>
+          <View style={styles.urgencyIndicator}>
+            <View style={styles.urgencyDot} />
+            <Text style={styles.urgencyText}>LIVE</Text>
           </View>
         </View>
       </View>
       <View style={styles.featuredContent}>
         <Text style={styles.featuredTitle} numberOfLines={2}>{item.title}</Text>
         <View style={styles.featuredMeta}>
-          <Text style={styles.featuredDate}>
-            {moment(item.date).format('MMM D, YYYY')}
-          </Text>
-          <Text style={styles.featuredLocation}>📍 {item.location}</Text>
+          <View style={styles.metaItem}>
+            <Text style={styles.metaIcon}>📅</Text>
+            <Text style={styles.featuredDate}>
+              {moment(item.date).format('MMM D, YYYY')}
+            </Text>
+          </View>
+          <View style={styles.metaItem}>
+            <Text style={styles.metaIcon}>📍</Text>
+            <Text style={styles.featuredLocation}>{item.location}</Text>
+          </View>
         </View>
         <Text style={styles.featuredDescription} numberOfLines={3}>
           {item.description}
@@ -102,7 +116,7 @@ const LguScreen = ({ navigation }) => {
     <TouchableOpacity
       style={styles.newsCard}
       onPress={() => item.url ? Linking.openURL(item.url) : null}
-      activeOpacity={0.8}
+      activeOpacity={0.7}
     >
       <View style={styles.newsImageContainer}>
         {item.urlToImage ? (
@@ -112,26 +126,34 @@ const LguScreen = ({ navigation }) => {
             <Text style={styles.newsPlaceholderText}>🌦️</Text>
           </View>
         )}
+        <View style={styles.newsImageOverlay}>
+          <View style={styles.newsCategoryBadge}>
+            <Text style={styles.newsCategoryText}>Weather</Text>
+          </View>
+        </View>
       </View>
       <View style={styles.newsContent}>
         <View style={styles.newsHeader}>
-          <View style={styles.newsCategoryBadge}>
-            <Text style={styles.newsCategoryText}>News</Text>
-          </View>
           <Text style={styles.newsTime}>
             {item.publishedAt ? moment(item.publishedAt).fromNow() : ''}
           </Text>
+          <View style={styles.sourceContainer}>
+            <Text style={styles.sourceIcon}>📰</Text>
+            <Text style={styles.newsSource}>{item.source?.name || 'Weather Update'}</Text>
+          </View>
         </View>
         <Text style={styles.newsTitle} numberOfLines={2}>{item.title}</Text>
-        <Text style={styles.newsLocation}>{item.source?.name || 'Unknown source'}</Text>
         <Text style={styles.newsDescription} numberOfLines={2}>
-          {item.description || 'No description available'}
+          {item.description || 'Tap to read more about this weather update'}
         </Text>
         <View style={styles.newsFooter}>
           <Text style={styles.newsDate}>
-            {item.publishedAt ? moment(item.publishedAt).format('MMMM D, YYYY') : ''}
+            {item.publishedAt ? moment(item.publishedAt).format('MMM D, YYYY') : ''}
           </Text>
-          <Text style={styles.readMore}>Read more →</Text>
+          <View style={styles.readMoreContainer}>
+            <Text style={styles.readMore}>Read more</Text>
+            <Text style={styles.readMoreIcon}>→</Text>
+          </View>
         </View>
       </View>
     </TouchableOpacity>
@@ -140,10 +162,14 @@ const LguScreen = ({ navigation }) => {
   if (loading || weatherLoading) {
     return (
       <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor="#f8fafc" />
+        <StatusBar barStyle="light-content" backgroundColor="#1e40af" />
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#3b82f6" />
-          <Text style={styles.loadingText}>Loading latest updates...</Text>
+          <View style={styles.loadingSpinner}>
+            <ActivityIndicator size="large" color="#3b82f6" />
+            <View style={styles.loadingPulse} />
+          </View>
+          <Text style={styles.loadingText}>Loading weather updates...</Text>
+          <Text style={styles.loadingSubtext}>Fetching latest flood and weather data</Text>
         </View>
       </SafeAreaView>
     );
@@ -153,39 +179,48 @@ const LguScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#f8fafc" />
+      <StatusBar barStyle="light-content" backgroundColor="#1e40af" />
       
       {/* Header */}
       <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <View style={styles.headerIcon}>
-            <Text style={styles.headerIconText}>📰</Text>
+        <View style={styles.headerBackground} />
+        <View style={styles.headerContent}>
+          <View style={styles.headerTop}>
+            <View style={styles.headerIcon}>
+              <Text style={styles.headerIconText}>🌊</Text>
+            </View>
+            <View style={styles.headerTextContainer}>
+              <Text style={styles.headerTitle}>LGU Updates</Text>
+              <Text style={styles.headerSubtitle}>Events and News</Text>
+            </View>
+            <TouchableOpacity style={styles.settingsButton}>
+              <Text style={styles.settingsIcon}>⚙️</Text>
+            </TouchableOpacity>
           </View>
-          <View style={styles.headerTextContainer}>
-            <Text style={styles.headerTitle}>Local Updates</Text>
-            <Text style={styles.headerSubtitle}>News, events and weather</Text>
-          </View>
-          <View style={styles.liveIndicator}>
-            <View style={styles.liveDot} />
-            <Text style={styles.liveText}>LIVE</Text>
-          </View>
-        </View>
-        <View style={styles.headerStats}>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{schedules.length}</Text>
-            <Text style={styles.statLabel}>Weather</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{weatherNews.length}</Text>
-            <Text style={styles.statLabel}>News</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>
-              {moment().format('MMM D')}
-            </Text>
-            <Text style={styles.statLabel}>Today</Text>
+          
+          {/* Weather Stats Cards */}
+          <View style={styles.statsContainer}>
+            <View style={styles.statCard}>
+              <View style={styles.statIconContainer}>
+                <Text style={styles.statIcon}>🌊</Text>
+              </View>
+              <Text style={styles.statNumber}>{schedules.length}</Text>
+              <Text style={styles.statLabel}>Flood Alerts</Text>
+            </View>
+            <View style={styles.statCard}>
+              <View style={styles.statIconContainer}>
+                <Text style={styles.statIcon}>🌧️</Text>
+              </View>
+              <Text style={styles.statNumber}>{weatherNews.length}</Text>
+              <Text style={styles.statLabel}>Weather News</Text>
+            </View>
+            <View style={styles.statCard}>
+              <View style={styles.statIconContainer}>
+                <Text style={styles.statIcon}>📅</Text>
+              </View>
+              <Text style={styles.statNumber}>{moment().format('DD')}</Text>
+              <Text style={styles.statLabel}>Today</Text>
+            </View>
           </View>
         </View>
       </View>
@@ -198,16 +233,20 @@ const LguScreen = ({ navigation }) => {
             onRefresh={onRefresh}
             colors={['#3b82f6']}
             tintColor="#3b82f6"
+            progressBackgroundColor="#ffffff"
           />
         }
         showsVerticalScrollIndicator={false}
       >
-        {/* Breaking News Section */}
+        {/* Emergency Alerts Section */}
         {featuredNews.length > 0 && (
-          <View style={styles.breakingSection}>
-            <View style={styles.breakingHeader}>
-              <Text style={styles.breakingTitle}>News Updates</Text>
-              <Text style={styles.breakingSubtitle}>Featured Story</Text>
+          <View style={styles.emergencySection}>
+            <View style={styles.emergencyHeader}>
+              <View style={styles.emergencyTitleContainer}>
+                <Text style={styles.emergencyIcon}>🚨</Text>
+                <Text style={styles.emergencyTitle}>Emergency Alerts</Text>
+              </View>
+              <Text style={styles.emergencySubtitle}>Critical Updates</Text>
             </View>
             <FlatList
               data={featuredNews}
@@ -221,20 +260,29 @@ const LguScreen = ({ navigation }) => {
         )}
 
         {/* Weather News Section */}
-        <View style={styles.latestSection}>
+        <View style={styles.newsSection}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>🌦️ Laters News</Text>
+            <View style={styles.sectionTitleContainer}>
+              <Text style={styles.sectionIcon}>🌦️</Text>
+              <Text style={styles.sectionTitle}>Latest Weather News</Text>
+            </View>
             <TouchableOpacity 
-              style={styles.viewAllButton}
+              style={styles.refreshButton}
               onPress={fetchWeatherNews}
             >
-              <Text style={styles.viewAllText}>Refresh</Text>
+              <Text style={styles.refreshIcon}>🔄</Text>
+              <Text style={styles.refreshText}>Refresh</Text>
             </TouchableOpacity>
           </View>
           
           {error ? (
-            <View style={styles.emptyContainer}>
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorIcon}>⚠️</Text>
+              <Text style={styles.errorTitle}>Connection Error</Text>
               <Text style={styles.errorText}>{error}</Text>
+              <TouchableOpacity style={styles.retryButton} onPress={fetchWeatherNews}>
+                <Text style={styles.retryText}>Try Again</Text>
+              </TouchableOpacity>
             </View>
           ) : weatherNews.length > 0 ? (
             <FlatList
@@ -246,13 +294,18 @@ const LguScreen = ({ navigation }) => {
             />
           ) : (
             <View style={styles.emptyContainer}>
-              <Text style={styles.emptyIcon}>🌦️</Text>
+              <Text style={styles.emptyIcon}>🌤️</Text>
               <Text style={styles.emptyTitle}>No Weather Updates</Text>
-              <Text style={styles.emptyText}>Check back later for weather news</Text>
+              <Text style={styles.emptyText}>All clear! Check back later for weather updates</Text>
             </View>
           )}
         </View>
       </ScrollView>
+
+      {/* Floating Action Button */}
+      <TouchableOpacity style={styles.fab} activeOpacity={0.8}>
+        <Text style={styles.fabIcon}>📍</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 };
@@ -260,247 +313,332 @@ const LguScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8fafc',
+    backgroundColor: '#f1f5f9',
   },
   header: {
-    backgroundColor: '#ffffff',
+    position: 'relative',
+    paddingBottom: 24,
+  },
+  headerBackground: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 200,
+    backgroundColor: '#1e40af',
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
+  },
+  headerContent: {
     paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 3,
+    paddingTop: 16,
+    zIndex: 1,
   },
   headerTop: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 24,
   },
   headerIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#dbeafe',
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: 16,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   headerIconText: {
-    fontSize: 24,
+    fontSize: 28,
   },
   headerTextContainer: {
     flex: 1,
   },
   headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#1f2937',
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#ffffff',
+    fontFamily: 'System',
   },
   headerSubtitle: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginTop: 2,
+    fontSize: 16,
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginTop: 4,
+    fontWeight: '500',
   },
-  liveIndicator: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fef2f2',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#fecaca',
-  },
-  liveDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: '#ef4444',
-    marginRight: 4,
-  },
-  liveText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#ef4444',
-  },
-  headerStats: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  settingsButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     justifyContent: 'center',
-  },
-  statItem: {
     alignItems: 'center',
+  },
+  settingsIcon: {
+    fontSize: 20,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginHorizontal: -8,
+  },
+  statCard: {
     flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 20,
+    padding: 16,
+    marginHorizontal: 8,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  statIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#dbeafe',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  statIcon: {
+    fontSize: 20,
   },
   statNumber: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#3b82f6',
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#1e40af',
+    marginBottom: 4,
   },
   statLabel: {
     fontSize: 12,
-    color: '#6b7280',
-    marginTop: 2,
-  },
-  statDivider: {
-    width: 1,
-    height: 24,
-    backgroundColor: '#e2e8f0',
-    marginHorizontal: 8,
+    color: '#64748b',
+    fontWeight: '600',
+    textAlign: 'center',
   },
   scrollContainer: {
     flex: 1,
+    marginTop: -8,
   },
-  breakingSection: {
-    backgroundColor: '#ffffff',
-    marginBottom: 8,
+  emergencySection: {
+    marginBottom: 24,
   },
-  breakingHeader: {
+  emergencyHeader: {
     paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 12,
+    paddingTop: 24,
+    paddingBottom: 16,
   },
-  breakingTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1f2937',
+  emergencyTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
   },
-  breakingSubtitle: {
-    fontSize: 12,
-    color: '#6b7280',
-    marginTop: 2,
+  emergencyIcon: {
+    fontSize: 24,
+    marginRight: 12,
+  },
+  emergencyTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#dc2626',
+  },
+  emergencySubtitle: {
+    fontSize: 14,
+    color: '#64748b',
+    marginLeft: 36,
+    fontWeight: '500',
   },
   featuredContainer: {
     paddingHorizontal: 20,
-    paddingBottom: 20,
   },
   featuredCard: {
-    width: 320,
+    width: screenWidth - 40,
     backgroundColor: '#ffffff',
-    borderRadius: 16,
+    borderRadius: 24,
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 12,
   },
   featuredImageContainer: {
     position: 'relative',
+    height: 240,
   },
   featuredImage: {
     width: '100%',
-    height: 200,
+    height: '100%',
     resizeMode: 'cover',
   },
   placeholderImage: {
     width: '100%',
-    height: 200,
-    backgroundColor: '#f1f5f9',
+    height: '100%',
+    backgroundColor: '#e2e8f0',
     justifyContent: 'center',
     alignItems: 'center',
   },
   placeholderText: {
-    fontSize: 48,
+    fontSize: 64,
+  },
+  featuredGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 120,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
   },
   featuredOverlay: {
     position: 'absolute',
-    top: 12,
-    left: 12,
+    top: 16,
+    left: 16,
+    right: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   categoryBadge: {
-    backgroundColor: 'rgba(59, 130, 246, 0.9)',
+    backgroundColor: 'rgba(220, 38, 38, 0.9)',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  categoryText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#ffffff',
+  },
+  urgencyIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
   },
-  categoryText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#ffffff',
+  urgencyDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#ef4444',
+    marginRight: 6,
+  },
+  urgencyText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#ef4444',
   },
   featuredContent: {
-    padding: 20,
+    padding: 24,
   },
   featuredTitle: {
-    fontSize: 20,
-    fontWeight: '700',
+    fontSize: 22,
+    fontWeight: '800',
     color: '#1f2937',
-    marginBottom: 12,
-    lineHeight: 26,
+    marginBottom: 16,
+    lineHeight: 28,
   },
   featuredMeta: {
+    marginBottom: 16,
+  },
+  metaItem: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  metaIcon: {
+    fontSize: 16,
+    marginRight: 8,
   },
   featuredDate: {
     fontSize: 14,
     color: '#3b82f6',
-    fontWeight: '500',
+    fontWeight: '600',
   },
   featuredLocation: {
     fontSize: 14,
-    color: '#6b7280',
+    color: '#64748b',
+    fontWeight: '500',
   },
   featuredDescription: {
-    fontSize: 14,
+    fontSize: 16,
     color: '#4b5563',
-    lineHeight: 20,
+    lineHeight: 24,
   },
-  latestSection: {
+  newsSection: {
     backgroundColor: '#ffffff',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingTop: 24,
     marginTop: 8,
-    paddingTop: 20,
   },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    marginBottom: 16,
+    marginBottom: 20,
+  },
+  sectionTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  sectionIcon: {
+    fontSize: 24,
+    marginRight: 12,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 20,
+    fontWeight: '800',
     color: '#1f2937',
   },
-  viewAllButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+  refreshButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#f1f5f9',
-    borderRadius: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
   },
-  viewAllText: {
-    fontSize: 12,
+  refreshIcon: {
+    fontSize: 16,
+    marginRight: 6,
+  },
+  refreshText: {
+    fontSize: 14,
     fontWeight: '600',
     color: '#3b82f6',
   },
   newsContainer: {
     paddingHorizontal: 20,
-    paddingBottom: 20,
+    paddingBottom: 32,
   },
   newsCard: {
-    flexDirection: 'row',
     backgroundColor: '#ffffff',
-    borderRadius: 12,
+    borderRadius: 20,
     marginBottom: 16,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#f1f5f9',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    elevation: 6,
   },
   newsImageContainer: {
-    width: 100,
-    height: 120,
+    position: 'relative',
+    height: 140,
   },
   newsImage: {
     width: '100%',
@@ -515,50 +653,63 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   newsPlaceholderText: {
-    fontSize: 24,
+    fontSize: 40,
+  },
+  newsImageOverlay: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+  },
+  newsCategoryBadge: {
+    backgroundColor: 'rgba(59, 130, 246, 0.9)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  newsCategoryText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#ffffff',
   },
   newsContent: {
-    flex: 1,
-    padding: 16,
+    padding: 20,
   },
   newsHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
-  },
-  newsCategoryBadge: {
-    backgroundColor: '#eff6ff',
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  newsCategoryText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#3b82f6',
+    marginBottom: 12,
   },
   newsTime: {
-    fontSize: 10,
-    color: '#9ca3af',
+    fontSize: 12,
+    color: '#94a3b8',
+    fontWeight: '500',
+  },
+  sourceContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  sourceIcon: {
+    fontSize: 12,
+    marginRight: 4,
+  },
+  newsSource: {
+    fontSize: 12,
+    color: '#64748b',
+    fontWeight: '600',
   },
   newsTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: '700',
     color: '#1f2937',
-    marginBottom: 6,
-    lineHeight: 20,
-  },
-  newsLocation: {
-    fontSize: 12,
-    color: '#6b7280',
-    marginBottom: 8,
+    marginBottom: 12,
+    lineHeight: 24,
   },
   newsDescription: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#4b5563',
-    lineHeight: 18,
-    marginBottom: 12,
+    lineHeight: 20,
+    marginBottom: 16,
   },
   newsFooter: {
     flexDirection: 'row',
@@ -566,49 +717,127 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   newsDate: {
-    fontSize: 11,
-    color: '#9ca3af',
+    fontSize: 12,
+    color: '#94a3b8',
+    fontWeight: '500',
+  },
+  readMoreContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   readMore: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#3b82f6',
-    fontWeight: '500',
+    fontWeight: '600',
+    marginRight: 4,
+  },
+  readMoreIcon: {
+    fontSize: 14,
+    color: '#3b82f6',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#f8fafc',
+  },
+  loadingSpinner: {
+    position: 'relative',
+    marginBottom: 24,
+  },
+  loadingPulse: {
+    position: 'absolute',
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+    top: -15,
+    left: -15,
   },
   loadingText: {
-    fontSize: 16,
-    color: '#6b7280',
-    marginTop: 12,
+    fontSize: 18,
+    color: '#1f2937',
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  loadingSubtext: {
+    fontSize: 14,
+    color: '#64748b',
+    textAlign: 'center',
+  },
+  errorContainer: {
+    alignItems: 'center',
+    paddingVertical: 48,
+    paddingHorizontal: 20,
+  },
+  errorIcon: {
+    fontSize: 56,
+    marginBottom: 16,
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#dc2626',
+    marginBottom: 8,
+  },
+  errorText: {
+    fontSize: 14,
+    color: '#64748b',
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 24,
+  },
+  retryButton: {
+    backgroundColor: '#3b82f6',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 24,
+  },
+  retryText: {
+    color: '#ffffff',
+    fontWeight: '600',
+    fontSize: 14,
   },
   emptyContainer: {
     alignItems: 'center',
-    paddingVertical: 40,
+    paddingVertical: 48,
     paddingHorizontal: 20,
   },
   emptyIcon: {
-    fontSize: 48,
-    marginBottom: 16,
+    fontSize: 56,
+    marginBottom: 20,
   },
   emptyTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 20,
+    fontWeight: '700',
     color: '#1f2937',
     marginBottom: 8,
   },
   emptyText: {
     fontSize: 14,
-    color: '#6b7280',
+    color: '#64748b',
     textAlign: 'center',
     lineHeight: 20,
   },
-  errorText: {
-    color: 'red',
-    textAlign: 'center',
-    marginBottom: 20,
+  fab: {
+    position: 'absolute',
+    right: 20,
+    bottom: 32,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#3b82f6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 16,
+  },
+  fabIcon: {
+    fontSize: 24,
+    color: '#ffffff',
   },
 });
 

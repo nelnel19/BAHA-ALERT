@@ -423,7 +423,6 @@ const WeatherIcon = ({ type, size = 24, color = "#666666" }) => {
   return <View style={{ width: size, height: size, position: "relative" }}>{getWeatherIcon()}</View>
 }
 
-// Enhanced Loading Screen Component
 const LoadingScreen = ({ progress }) => {
   const rotateAnim = useRef(new Animated.Value(0)).current
   const pulseAnim = useRef(new Animated.Value(1)).current
@@ -435,7 +434,7 @@ const LoadingScreen = ({ progress }) => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 800,
+        duration: 400,
         useNativeDriver: true,
       }),
       Animated.spring(scaleAnim, {
@@ -450,7 +449,7 @@ const LoadingScreen = ({ progress }) => {
     Animated.loop(
       Animated.timing(rotateAnim, {
         toValue: 1,
-        duration: 3000,
+        duration: 1500,
         useNativeDriver: true,
       }),
     ).start()
@@ -460,12 +459,12 @@ const LoadingScreen = ({ progress }) => {
       Animated.sequence([
         Animated.timing(pulseAnim, {
           toValue: 1.1,
-          duration: 1500,
+          duration: 800,
           useNativeDriver: true,
         }),
         Animated.timing(pulseAnim, {
           toValue: 1,
-          duration: 1500,
+          duration: 800,
           useNativeDriver: true,
         }),
       ]),
@@ -824,7 +823,7 @@ const WeatherScreen = () => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 800,
+        duration: 400,
         useNativeDriver: true,
       }),
       Animated.spring(slideAnim, {
@@ -842,7 +841,7 @@ const WeatherScreen = () => {
     ]).start()
 
     Animated.sequence([
-      Animated.delay(400),
+      Animated.delay(200),
       Animated.spring(bounceAnim, {
         toValue: 0,
         tension: 100,
@@ -855,12 +854,12 @@ const WeatherScreen = () => {
       Animated.sequence([
         Animated.timing(pulseAnim, {
           toValue: 1.02,
-          duration: 4000,
+          duration: 2000,
           useNativeDriver: true,
         }),
         Animated.timing(pulseAnim, {
           toValue: 1,
-          duration: 4000,
+          duration: 2000,
           useNativeDriver: true,
         }),
       ]),
@@ -871,7 +870,7 @@ const WeatherScreen = () => {
     Animated.loop(
       Animated.timing(loadingRotation, {
         toValue: 1,
-        duration: 2000,
+        duration: 1000,
         useNativeDriver: true,
       }),
     ).start()
@@ -880,12 +879,12 @@ const WeatherScreen = () => {
   useEffect(() => {
     startLoadingAnimation()
 
-    // Simulate loading progress
+    // Simulate loading progress with shorter delays
     const progressSteps = [
-      { progress: 25, delay: 600 },
-      { progress: 50, delay: 1200 },
-      { progress: 75, delay: 1800 },
-      { progress: 100, delay: 2400 },
+      { progress: 25, delay: 300 },
+      { progress: 50, delay: 600 },
+      { progress: 75, delay: 900 },
+      { progress: 100, delay: 1200 },
     ]
 
     progressSteps.forEach(({ progress, delay }) => {
@@ -912,7 +911,7 @@ const WeatherScreen = () => {
       setTimeout(() => {
         setLoading(false)
         startAnimations()
-      }, 3000)
+      }, 1500) // Reduced from 3000 to 1500
     })()
   }, [])
 

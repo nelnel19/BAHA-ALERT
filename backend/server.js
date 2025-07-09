@@ -18,7 +18,8 @@ app.use("/api/auth", require("./routes/auth"));
 app.use("/api/schedules", require("./routes/lguSchedule"));
 app.use("/api/ai", require("./routes/ai"));
 app.use("/api/news", require("./routes/news"));
-app.use("/api/flood-analyze", require("./routes/flood")); // ✅ Flood route added
+app.use("/api/flood-analyze", require("./routes/flood"));         // ✅ Flood analysis
+app.use("/api/flood-reports", require("./routes/floodReports"));  // ✅ Flood report submission
 
 // Start server
 const PORT = process.env.PORT || 5000;
