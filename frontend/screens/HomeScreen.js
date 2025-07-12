@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -12,14 +12,109 @@ import {
   Dimensions,
   Platform,
   Modal,
-  TouchableWithoutFeedback
+  TouchableWithoutFeedback,
+  Animated
 } from 'react-native';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Speech from 'expo-speech';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Path } from 'react-native-svg';
 
 const { width, height } = Dimensions.get('window');
+
+const WaveComponent = ({ color, height: waveHeight, speed = 1000, phase = 0 }) => {
+  const animatedValue = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const animate = () => {
+      animatedValue.setValue(0);
+      Animated.timing(animatedValue, {
+        toValue: 1,
+        duration: speed,
+        useNativeDriver: false,
+      }).start(() => animate());
+    };
+    animate();
+  }, [animatedValue, speed]);
+
+  return (
+    <Animated.View
+      style={[
+        styles.waveContainer,
+        {
+          height: waveHeight,
+          transform: [
+            {
+              translateX: animatedValue.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, -width],
+              }),
+            },
+          ],
+        },
+      ]}
+    >
+      <Svg height={waveHeight} width={width * 2} viewBox={`0 0 ${width * 2} ${waveHeight}`}>
+        <Path
+          d={`M0,${waveHeight * 0.5} Q${width * 0.25},${waveHeight * 0.3} ${width * 0.5},${waveHeight * 0.5} T${width},${waveHeight * 0.5} T${width * 1.5},${waveHeight * 0.5} T${width * 2},${waveHeight * 0.5} V${waveHeight} H0 Z`}
+          fill={color}
+        />
+      </Svg>
+    </Animated.View>
+  );
+};
+
+const FloodWaveBackground = () => {
+  return (
+    <View style={styles.floodWaveContainer}>
+      <WaveComponent color="rgba(74, 144, 226, 0.1)" height={60} speed={3000} phase={0} />
+      <WaveComponent color="rgba(74, 144, 226, 0.08)" height={50} speed={2500} phase={0.3} />
+      <WaveComponent color="rgba(74, 144, 226, 0.06)" height={40} speed={2000} phase={0.6} />
+    </View>
+  );
+};
+
+const AnimatedHeaderWave = () => {
+  const animatedValue = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    const animate = () => {
+      animatedValue.setValue(0);
+      Animated.timing(animatedValue, {
+        toValue: 1,
+        duration: 4000,
+        useNativeDriver: false,
+      }).start(() => animate());
+    };
+    animate();
+  }, [animatedValue]);
+
+  return (
+    <Animated.View
+      style={[
+        styles.headerWaveContainer,
+        {
+          transform: [
+            {
+              translateX: animatedValue.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, -width],
+              }),
+            },
+          ],
+        },
+      ]}
+    >
+      <Svg height={30} width={width * 2} viewBox={`0 0 ${width * 2} 30`}>
+        <Path
+          d={`M0,15 Q${width * 0.25},5 ${width * 0.5},15 T${width},15 T${width * 1.5},15 T${width * 2},15 V30 H0 Z`}
+          fill="rgba(255, 255, 255, 0.1)"
+        />
+      </Svg>
+    </Animated.View>
+  );
+};
 
 const HomeScreen = ({ navigation }) => {
   const [username, setUsername] = useState("");
@@ -29,6 +124,11 @@ const HomeScreen = ({ navigation }) => {
   const [alertError, setAlertError] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isImageModalVisible, setIsImageModalVisible] = useState(false);
+  
+  // Animation values
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(50)).current;
+  const headerOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -51,6 +151,27 @@ const HomeScreen = ({ navigation }) => {
     getUser();
     fetchWeatherAlerts();
 
+    // Start entrance animations
+    Animated.sequence([
+      Animated.timing(headerOpacity, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+      Animated.parallel([
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+
     return () => clearInterval(timer);
   }, []);
 
@@ -70,7 +191,7 @@ const HomeScreen = ({ navigation }) => {
         if (weatherCondition === 'Thunderstorm' || weatherCondition === 'Tropical Storm') {
           setAlertMessage(`Babala: May paparating na ${getTagalogTerm(weatherCondition)} sa ating bansa. ${getTagalogAdvice(weatherCondition)}`);
         } else {
-          setAlertMessage("Walang aktibong bagyo sa bansa ngayon. Manatiling ligtas");
+          setAlertMessage("Walang aktibong bagyo sa bansa ngayon. Manatiling bi-ngot");
         }
       } else {
         setAlertMessage("Hindi makakuha ng impormasyon sa panahon. Subukan muli mamaya.");
@@ -183,6 +304,9 @@ const HomeScreen = ({ navigation }) => {
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#4A90E2" />
       
+      {/* Flood Wave Background */}
+      <FloodWaveBackground />
+      
       {/* Profile Image Modal */}
       <Modal
         visible={isImageModalVisible}
@@ -208,232 +332,247 @@ const HomeScreen = ({ navigation }) => {
         </TouchableWithoutFeedback>
       </Modal>
       
-      {/* Header with Gradient */}
-      <LinearGradient
-        colors={['#4A90E2', '#7BB3F0']}
-        style={styles.header}
-      >
-        <View style={styles.headerTop}>
-          <View style={styles.profileSection}>
-            <TouchableOpacity onPress={openImageModal}>
-              {profileImage ? (
-                <Image 
-                  source={{ uri: profileImage }}
-                  style={styles.profileImage}
-                />
-              ) : (
-                <View style={styles.profilePlaceholder}>
-                  <Text style={styles.profileInitial}>
-                    {username ? username.charAt(0).toUpperCase() : "G"}
-                  </Text>
-                </View>
-              )}
-            </TouchableOpacity>
-            <View style={styles.profileInfo}>
-              <Text style={styles.greetingText}>{getGreeting()}</Text>
-              <Text style={styles.usernameText}>{username || "Guest"}</Text>
+      {/* Header with Gradient and Wave Animation */}
+      <Animated.View style={[styles.headerWrapper, { opacity: headerOpacity }]}>
+        <LinearGradient
+          colors={['#4A90E2', '#7BB3F0']}
+          style={styles.header}
+        >
+          <View style={styles.headerTop}>
+            <View style={styles.profileSection}>
+              <TouchableOpacity onPress={openImageModal}>
+                {profileImage ? (
+                  <Image 
+                    source={{ uri: profileImage }}
+                    style={styles.profileImage}
+                  />
+                ) : (
+                  <View style={styles.profilePlaceholder}>
+                    <Text style={styles.profileInitial}>
+                      {username ? username.charAt(0).toUpperCase() : "G"}
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+              <View style={styles.profileInfo}>
+                <Text style={styles.greetingText}>{getGreeting()}</Text>
+                <Text style={styles.usernameText}>{username || "Guest"}</Text>
+              </View>
+            </View>
+            
+            <View style={styles.headerActions}>
+              <TouchableOpacity 
+                onPress={() => navigation.navigate("History")}
+                style={styles.headerActionButton}
+              >
+                <Ionicons name="time" size={24} color="#ffffff" />
+              </TouchableOpacity>
+              <TouchableOpacity 
+                onPress={() => navigation.navigate("Profile")}
+                style={styles.headerActionButton}
+              >
+                <Ionicons name="settings" size={24} color="#ffffff" />
+              </TouchableOpacity>
             </View>
           </View>
           
-          <View style={styles.headerActions}>
-            <TouchableOpacity 
-              onPress={() => navigation.navigate("History")}
-              style={styles.headerActionButton}
-            >
-              <Ionicons name="time" size={24} color="#ffffff" />
-            </TouchableOpacity>
-            <TouchableOpacity 
-              onPress={() => navigation.navigate("Profile")}
-              style={styles.headerActionButton}
-            >
-              <Ionicons name="settings" size={24} color="#ffffff" />
-            </TouchableOpacity>
+          <View style={styles.timeSection}>
+            <Text style={styles.timeText}>{getTimeString()}</Text>
+            <Text style={styles.dateText}>{getDateString()}</Text>
           </View>
-        </View>
-        
-        <View style={styles.timeSection}>
-          <Text style={styles.timeText}>{getTimeString()}</Text>
-          <Text style={styles.dateText}>{getDateString()}</Text>
-        </View>
-      </LinearGradient>
+          
+          {/* Animated Wave at bottom of header */}
+          <AnimatedHeaderWave />
+        </LinearGradient>
+      </Animated.View>
 
       <ScrollView 
         style={styles.scrollContainer}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Weather Alert Card */}
-        {alertMessage && (
-          <View style={styles.alertCard}>
-            <LinearGradient
-              colors={alertMessage.includes('Babala') ? ['#FF6B6B', '#FF8E8E'] : ['#4ECDC4', '#6ED5CD']}
-              style={styles.alertGradient}
-            >
-              <View style={styles.alertHeader}>
-                <View style={styles.alertIconContainer}>
-                  <Ionicons 
-                    name={alertMessage.includes('Babala') ? "warning" : "shield-checkmark"} 
-                    size={20} 
-                    color="#ffffff" 
-                  />
-                </View>
-                <Text style={styles.alertTitle}>Weather Alert</Text>
-                <TouchableOpacity onPress={speakAlert} style={styles.speakButton}>
-                  <Ionicons name="volume-high" size={18} color="#ffffff" />
-                </TouchableOpacity>
-              </View>
-              <Text style={styles.alertText}>{alertMessage}</Text>
-            </LinearGradient>
-          </View>
-        )}
-
-        {/* Quick Actions Grid */}
-        <Text style={styles.sectionTitle}>Quick Actions</Text>
-        <View style={styles.quickActionsGrid}>
-          <TouchableOpacity
-            style={[styles.quickActionCard, styles.floodAction]}
-            onPress={() => navigation.navigate("Flood")}
-            activeOpacity={0.8}
-          >
-            <LinearGradient
-              colors={['#FF6B6B', '#FF8E8E']}
-              style={styles.actionGradient}
-            >
-              <View style={styles.actionIconContainer}>
-                <Ionicons name="water" size={28} color="#ffffff" />
-              </View>
-              <Text style={styles.quickActionText}>Report Flood</Text>
-              <Text style={styles.quickActionSubtext}>Emergency reporting</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.quickActionCard, styles.weatherAction]}
-            onPress={() => navigation.navigate("Weather")}
-            activeOpacity={0.8}
-          >
-            <LinearGradient
-              colors={['#4A90E2', '#7BB3F0']}
-              style={styles.actionGradient}
-            >
-              <View style={styles.actionIconContainer}>
-                <Ionicons name="cloud" size={28} color="#ffffff" />
-              </View>
-              <Text style={styles.quickActionText}>Weather</Text>
-              <Text style={styles.quickActionSubtext}>Current conditions</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.quickActionCard, styles.lguAction]}
-            onPress={() => navigation.navigate("Lgu")}
-            activeOpacity={0.8}
-          >
-            <LinearGradient
-              colors={['#9B59B6', '#B980D1']}
-              style={styles.actionGradient}
-            >
-              <View style={styles.actionIconContainer}>
-                <Ionicons name="business" size={28} color="#ffffff" />
-              </View>
-              <Text style={styles.quickActionText}>LGU Updates</Text>
-              <Text style={styles.quickActionSubtext}>Official announcements</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.quickActionCard, styles.aiAction]}
-            onPress={() => navigation.navigate("Ai")}
-            activeOpacity={0.8}
-          >
-            <LinearGradient
-              colors={['#2ECC71', '#58D68D']}
-              style={styles.actionGradient}
-            >
-              <View style={styles.actionIconContainer}>
-                <Ionicons name="chatbubble-ellipses" size={28} color="#ffffff" />
-              </View>
-              <Text style={styles.quickActionText}>AI Assistant</Text>
-              <Text style={styles.quickActionSubtext}>Get help & advice</Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        </View>
-
-        {/* More Options */}
-        <Text style={styles.sectionTitle}>More Options</Text>
-        <View style={styles.optionsContainer}>
-          <TouchableOpacity
-            style={styles.optionItem}
-            onPress={() => navigation.navigate("Game")}
-            activeOpacity={0.8}
-          >
-            <View style={[styles.optionIcon, { backgroundColor: '#FFF3CD' }]}>
-              <Ionicons name="game-controller" size={20} color="#F59E0B" />
-            </View>
-            <View style={styles.optionTextContainer}>
-              <Text style={styles.optionTitle}>Mini Games</Text>
-              <Text style={styles.optionSubtitle}>Educational weather games</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
-          </TouchableOpacity>
-
-          <View style={styles.divider} />
-
-          <TouchableOpacity
-            style={styles.optionItem}
-            onPress={() => navigation.navigate("History")}
-            activeOpacity={0.8}
-          >
-            <View style={[styles.optionIcon, { backgroundColor: '#E0E7FF' }]}>
-              <Ionicons name="time" size={20} color="#6366F1" />
-            </View>
-            <View style={styles.optionTextContainer}>
-              <Text style={styles.optionTitle}>Activity History</Text>
-              <Text style={styles.optionSubtitle}>View your past reports & activities</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
-          </TouchableOpacity>
-
-          <View style={styles.divider} />
-
-          <TouchableOpacity
-            style={styles.optionItem}
-            onPress={() => navigation.navigate("Profile")}
-            activeOpacity={0.8}
-          >
-            <View style={[styles.optionIcon, { backgroundColor: '#DBEAFE' }]}>
-              <Ionicons name="settings" size={20} color="#3B82F6" />
-            </View>
-            <View style={styles.optionTextContainer}>
-              <Text style={styles.optionTitle}>Settings & Profile</Text>
-              <Text style={styles.optionSubtitle}>Manage your account preferences</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Emergency Contacts */}
-        <Text style={styles.sectionTitle}>Emergency Contacts</Text>
-        <View style={styles.emergencyContainer}>
-          <View style={styles.emergencyItem}>
-            <Ionicons name="call" size={20} color="#FF6B6B" />
-            <Text style={styles.emergencyText}>NDRRMC: 911</Text>
-          </View>
-          <View style={styles.emergencyItem}>
-            <Ionicons name="call" size={20} color="#FF6B6B" />
-            <Text style={styles.emergencyText}>Red Cross: 143</Text>
-          </View>
-        </View>
-
-        {/* Logout Button */}
-        <TouchableOpacity 
-          style={styles.logoutButton} 
-          onPress={handleLogout}
-          activeOpacity={0.8}
+        <Animated.View
+          style={[
+            styles.animatedContent,
+            {
+              opacity: fadeAnim,
+              transform: [{ translateY: slideAnim }],
+            },
+          ]}
         >
-          <Ionicons name="log-out-outline" size={20} color="#EF4444" />
-          <Text style={styles.logoutButtonText}>Sign Out</Text>
-        </TouchableOpacity>
+          {/* Weather Alert Card */}
+          {alertMessage && (
+            <View style={styles.alertCard}>
+              <LinearGradient
+                colors={alertMessage.includes('Babala') ? ['#FF6B6B', '#FF8E8E'] : ['#4ECDC4', '#6ED5CD']}
+                style={styles.alertGradient}
+              >
+                <View style={styles.alertHeader}>
+                  <View style={styles.alertIconContainer}>
+                    <Ionicons 
+                      name={alertMessage.includes('Babala') ? "warning" : "shield-checkmark"} 
+                      size={20} 
+                      color="#ffffff" 
+                    />
+                  </View>
+                  <Text style={styles.alertTitle}>Weather Alert</Text>
+                  <TouchableOpacity onPress={speakAlert} style={styles.speakButton}>
+                    <Ionicons name="volume-high" size={18} color="#ffffff" />
+                  </TouchableOpacity>
+                </View>
+                <Text style={styles.alertText}>{alertMessage}</Text>
+              </LinearGradient>
+            </View>
+          )}
+
+          {/* Quick Actions Grid */}
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <View style={styles.quickActionsGrid}>
+            <TouchableOpacity
+              style={[styles.quickActionCard, styles.floodAction]}
+              onPress={() => navigation.navigate("Flood")}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={['#FF6B6B', '#FF8E8E']}
+                style={styles.actionGradient}
+              >
+                <View style={styles.actionIconContainer}>
+                  <Ionicons name="water" size={28} color="#ffffff" />
+                </View>
+                <Text style={styles.quickActionText}>Report Flood</Text>
+                <Text style={styles.quickActionSubtext}>Emergency reporting</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.quickActionCard, styles.weatherAction]}
+              onPress={() => navigation.navigate("Weather")}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={['#4A90E2', '#7BB3F0']}
+                style={styles.actionGradient}
+              >
+                <View style={styles.actionIconContainer}>
+                  <Ionicons name="cloud" size={28} color="#ffffff" />
+                </View>
+                <Text style={styles.quickActionText}>Weather</Text>
+                <Text style={styles.quickActionSubtext}>Current conditions</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.quickActionCard, styles.lguAction]}
+              onPress={() => navigation.navigate("Lgu")}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={['#9B59B6', '#B980D1']}
+                style={styles.actionGradient}
+              >
+                <View style={styles.actionIconContainer}>
+                  <Ionicons name="business" size={28} color="#ffffff" />
+                </View>
+                <Text style={styles.quickActionText}>LGU Updates</Text>
+                <Text style={styles.quickActionSubtext}>Official announcements</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.quickActionCard, styles.aiAction]}
+              onPress={() => navigation.navigate("Ai")}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={['#2ECC71', '#58D68D']}
+                style={styles.actionGradient}
+              >
+                <View style={styles.actionIconContainer}>
+                  <Ionicons name="chatbubble-ellipses" size={28} color="#ffffff" />
+                </View>
+                <Text style={styles.quickActionText}>AI Assistant</Text>
+                <Text style={styles.quickActionSubtext}>Get help & advice</Text>
+              </LinearGradient>
+            </TouchableOpacity>
+          </View>
+
+          {/* More Options */}
+          <Text style={styles.sectionTitle}>More Options</Text>
+          <View style={styles.optionsContainer}>
+            <TouchableOpacity
+              style={styles.optionItem}
+              onPress={() => navigation.navigate("Game")}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.optionIcon, { backgroundColor: '#FFF3CD' }]}>
+                <Ionicons name="game-controller" size={20} color="#F59E0B" />
+              </View>
+              <View style={styles.optionTextContainer}>
+                <Text style={styles.optionTitle}>Mini Games</Text>
+                <Text style={styles.optionSubtitle}>Educational weather games</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
+            </TouchableOpacity>
+
+            <View style={styles.divider} />
+
+            <TouchableOpacity
+              style={styles.optionItem}
+              onPress={() => navigation.navigate("History")}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.optionIcon, { backgroundColor: '#E0E7FF' }]}>
+                <Ionicons name="time" size={20} color="#6366F1" />
+              </View>
+              <View style={styles.optionTextContainer}>
+                <Text style={styles.optionTitle}>Activity History</Text>
+                <Text style={styles.optionSubtitle}>View your past reports & activities</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
+            </TouchableOpacity>
+
+            <View style={styles.divider} />
+
+            <TouchableOpacity
+              style={styles.optionItem}
+              onPress={() => navigation.navigate("Profile")}
+              activeOpacity={0.8}
+            >
+              <View style={[styles.optionIcon, { backgroundColor: '#DBEAFE' }]}>
+                <Ionicons name="settings" size={20} color="#3B82F6" />
+              </View>
+              <View style={styles.optionTextContainer}>
+                <Text style={styles.optionTitle}>Settings & Profile</Text>
+                <Text style={styles.optionSubtitle}>Manage your account preferences</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={20} color="#94A3B8" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Emergency Contacts */}
+          <Text style={styles.sectionTitle}>Emergency Contacts</Text>
+          <View style={styles.emergencyContainer}>
+            <View style={styles.emergencyItem}>
+              <Ionicons name="call" size={20} color="#FF6B6B" />
+              <Text style={styles.emergencyText}>NDRRMC: 911</Text>
+            </View>
+            <View style={styles.emergencyItem}>
+              <Ionicons name="call" size={20} color="#FF6B6B" />
+              <Text style={styles.emergencyText}>Red Cross: 143</Text>
+            </View>
+          </View>
+
+          {/* Logout Button */}
+          <TouchableOpacity 
+            style={styles.logoutButton} 
+            onPress={handleLogout}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="log-out-outline" size={20} color="#EF4444" />
+            <Text style={styles.logoutButtonText}>Sign Out</Text>
+          </TouchableOpacity>
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -442,7 +581,7 @@ const HomeScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "darkwhite",
+    backgroundColor: "#f8fafc",
   },
   loadingContainer: {
     flex: 1,
@@ -485,10 +624,41 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
+  // Flood wave background styles
+  floodWaveContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 120,
+    zIndex: 0,
+  },
+  waveContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    overflow: 'hidden',
+  },
+  // Header styles
+  headerWrapper: {
+    position: 'relative',
+    zIndex: 1,
+  },
   header: {
     paddingHorizontal: 20,
     paddingTop: Platform.OS === 'android' ? 10 : 0,
     paddingBottom: 20,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  headerWaveContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 30,
+    overflow: 'hidden',
   },
   headerTop: {
     flexDirection: 'row',
@@ -548,6 +718,7 @@ const styles = StyleSheet.create({
   },
   timeSection: {
     alignItems: 'center',
+    marginBottom: 10,
   },
   timeText: {
     fontSize: 32,
@@ -563,10 +734,14 @@ const styles = StyleSheet.create({
   },
   scrollContainer: {
     flex: 1,
+    zIndex: 1,
   },
   scrollContent: {
     padding: 20,
     paddingBottom: 40,
+  },
+  animatedContent: {
+    flex: 1,
   },
   alertCard: {
     marginBottom: 24,
@@ -590,7 +765,7 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(131, 38, 38, 0.2)',
+    backgroundColor: 'rgba(255,255,255,0.2)',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
@@ -604,7 +779,7 @@ const styles = StyleSheet.create({
   speakButton: {
     padding: 6,
     borderRadius: 15,
-    backgroundColor: 'rgba(0, 0, 0, 0.1)',
+    backgroundColor: 'rgba(255,255,255,0.1)',
   },
   alertText: {
     fontSize: 14,
@@ -748,7 +923,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginLeft: 8,
   },
-  // New styles for image modal
+  // Modal styles
   modalContainer: {
     flex: 1,
     justifyContent: 'center',

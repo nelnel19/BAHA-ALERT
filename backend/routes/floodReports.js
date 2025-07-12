@@ -118,5 +118,14 @@ router.delete('/:id', async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+// GET endpoint for getting report count
+router.get('/reportcount', async (req, res) => {
+  try {
+    const count = await FloodReport.countDocuments();
+    res.status(200).json({ success: true, count });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
 
 module.exports = router;

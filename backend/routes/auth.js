@@ -116,5 +116,44 @@ router.delete("/delete/:id", async (req, res) => {
     res.status(500).json({ msg: "Internal server error" });
   }
 });
+// Get user statistics for dashboard (no auth required)
+router.get("/stats", async (req, res) => {
+  try {
+    // Get total number of users
+    const totalUsers = await User.countDocuments();
+    
+    // Get users grouped by creation date (for chart)
+    const usersByDate = await User.aggregate([
+      {
+        $group: {
+          _id: {
+            $dateToString: { format: "%Y-%m-%d", date: "$createdAt" }
+          },
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { "_id": 1 } }
+    ]);
+
+    res.json({
+      totalUsers,
+      usersByDate
+    });
+  } catch (err) {
+    console.error("Stats error:", err);
+    res.status(500).json({ msg: "Internal server error" });
+  }
+});
+
+// Get total number of users
+router.get("/count", async (req, res) => {
+  try {
+    const count = await User.countDocuments();
+    res.json({ totalUsers: count });
+  } catch (err) {
+    console.error("Count error:", err);
+    res.status(500).json({ msg: "Internal server error" });
+  }
+});
 
 module.exports = router;

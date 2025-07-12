@@ -94,4 +94,14 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// GET count of all schedules
+router.get('/count', async (req, res) => {
+  try {
+    const count = await LguSchedule.countDocuments();
+    res.status(200).json({ totalEvents: count });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to count schedules." });
+  }
+});
+
 module.exports = router;

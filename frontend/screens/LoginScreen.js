@@ -162,7 +162,13 @@ export default function LoginScreen({ navigation }) {
 
       await AsyncStorage.setItem("user", JSON.stringify(res.data.user))
       Alert.alert("Success", `Welcome ${res.data.user.name}`)
-      navigation.replace("Home")
+      
+      // Check user role and navigate accordingly
+      if (res.data.user.role === 'admin') {
+        navigation.replace("Dashboard") // Navigate to Reports screen for admin users
+      } else {
+        navigation.replace("Home") // Navigate to Home screen for regular users
+      }
     } catch (err) {
       const errorMessage = err.response?.data?.msg || err.response?.data?.message || "Something went wrong"
       Alert.alert("Login Error", errorMessage)
